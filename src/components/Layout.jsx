@@ -23,7 +23,7 @@ export default function Layout() {
                 <TrendingUp className="h-6 w-6 text-white" />
               </div>
               <div>
-                <span className="text-xl font-bold text-gray-900">Expense+Invest</span>
+                <span className="text-xl font-bold text-gray-900">OkoaPesa </span>
                 <span className="hidden md:inline ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
                   Smart Investing
                 </span>
@@ -81,7 +81,7 @@ export default function Layout() {
             <div className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-gray-400" />
               <p className="text-sm text-gray-500">
-                © 2024 Expense+Invest. Smart investing starts here.
+                © 2024 OkoaPesa. Smart investing starts here.
               </p>
             </div>
             <div className="flex gap-6">
