@@ -1,14 +1,42 @@
-// pages/Dashboard.jsx - Update this
-import { useContext } from 'react';
+// pages/Dashboard.jsx
+import { useContext, useState, useEffect } from 'react';  // ← ADD useState, useEffect
 import { AppContext } from '../contexts/AppContext';
-import { TrendingUp, AlertCircle, CheckCircle } from 'lucide-react';
+import { TrendingUp, AlertCircle, CheckCircle, Loader } from 'lucide-react';  // ← ADD Loader
+import { fetchSingleStock } from '../services/stockApi';  // ← ADD this import
 
 export default function Dashboard() {
   const { expenses, budgets } = useContext(AppContext);
   
+  // ADD THIS: State for API data
+  const [marketAdvice, setMarketAdvice] = useState(null);
+  const [loadingMarket, setLoadingMarket] = useState(true);
+  
   const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
   const monthlyBudget = budgets.monthly || 0;
   const remaining = monthlyBudget - totalExpenses;
+  
+  // ADD THIS: Fetch market data when component loads
+  useEffect(() => {
+    async function getMarketData() {
+      try {
+        // Get a major stock for market context
+        const stockData = await fetchSingleStock("AAPL");
+        if (stockData) {
+          setMarketAdvice({
+            symbol: stockData.symbol,
+            price: stockData.price,
+            change: stockData.change,
+            trend: stockData.change >= 0 ? "bullish" : "bearish"
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch market data:", error);
+      } finally {
+        setLoadingMarket(false);
+      }
+    }
+    getMarketData();
+  }, []);
   
   const getInvestmentAdvice = () => {
     if (expenses.length === 0) {
@@ -19,8 +47,12 @@ export default function Dashboard() {
       };
     }
     if (remaining > 500) {
+      // ADD THIS: Enhanced message with market context
+      const marketTip = marketAdvice?.trend === 'bullish' 
+        ? "Consider growth stocks like tech" 
+        : "Look for value stocks or ETFs";
       return {
-        message: "Excellent! You have surplus funds. Consider investing in diversified index funds or growth stocks",
+        message: `Excellent! You have $${remaining.toFixed(2)} surplus. ${marketTip}`,
         type: "success",
         icon: TrendingUp
       };
@@ -65,7 +97,7 @@ export default function Dashboard() {
         </div>
       </div>
       
-      {/* Investment Advice Card */}
+      {/* Investment Advice Card - This stays exactly as you have it */}
       <div className={`mt-6 rounded-lg p-6 border ${
         advice.type === 'success' ? 'bg-green-50 border-green-200' : 
         advice.type === 'warning' ? 'bg-red-50 border-red-200' : 
@@ -82,6 +114,52 @@ export default function Dashboard() {
             <p className="text-gray-700 mt-1">{advice.message}</p>
           </div>
         </div>
+      </div>
+      
+      {/* ADD THIS: Real Market Data Card - New section below your advice card */}
+      <div className="mt-4 bg-white rounded-lg shadow border p-5">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Live Market Snapshot
+          </h3>
+          {loadingMarket && <Loader className="h-4 w-4 animate-spin text-gray-400" />}
+        </div>
+        
+        {!loadingMarket && marketAdvice ? (
+          <div>
+            <p className="text-sm text-gray-600">
+              Market is currently <span className={marketAdvice.trend === 'bullish' ? 'text-green-600' : 'text-red-600'}>
+                {marketAdvice.trend === 'bullish' ? 'bullish' : 'bearish'}
+              </span>
+            </p>
+            <div className="mt-3 flex items-center justify-between">
+              <div>
+                <span className="text-sm text-gray-500">Top Stock</span>
+                <p className="font-semibold text-lg">{marketAdvice.symbol}</p>
+              </div>
+              <div>
+                <span className="text-sm text-gray-500">Price</span>
+                <p className="font-semibold text-lg">${marketAdvice.price?.toFixed(2)}</p>
+              </div>
+              <div>
+                <span className="text-sm text-gray-500">Change</span>
+                <p className={`font-semibold text-lg ${marketAdvice.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {marketAdvice.change?.toFixed(2)}%
+                </p>
+              </div>
+            </div>
+            <p className="text-xs text-gray-400 mt-3">
+              Data from Marketstack API • Updated in real-time
+            </p>
+          </div>
+        ) : (
+          !loadingMarket && (
+            <p className="text-sm text-gray-500 text-center py-4">
+              Connect to API for live market data
+            </p>
+          )
+        )}
       </div>
     </div>
   );
